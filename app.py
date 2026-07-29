@@ -357,7 +357,7 @@ if __name__ == '__main__':
     import sys
     keep_alive()
 
-    TOKEN = "TOKEN_BOT_CỦA_BẠN"
+    TOKEN = "8948413828:AAFKfmqJA_By7L63kgOF87-4iwwArnU3vpk"
     
     app = ApplicationBuilder().token(TOKEN).build()
     
