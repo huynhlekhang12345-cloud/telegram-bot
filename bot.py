@@ -12,10 +12,6 @@ bot = telebot.TeleBot(TOKEN)
 def send_welcome(message):
     bot.reply_to(message, "Chào bạn, bot đang chạy mượt mà trên Render!")
 
-@bot.message_handler(func=lambda message: True)
-def echo_all(message):
-    bot.reply_to(message, f"Bạn vừa nói: {message.text}")
-
 # Hàm chạy bot ở luồng riêng, dùng skip_pending=True để tránh lỗi 409 Conflict
 def run_bot():
     print("Bot Telegram đang bắt đầu chạy...")
