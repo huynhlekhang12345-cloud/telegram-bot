@@ -1,4 +1,4 @@
-python-telegram-bot==20.7
+pyTelegramBotAPI
 yt-dlp
 psutil
 flask
