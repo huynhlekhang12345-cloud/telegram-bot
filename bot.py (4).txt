@@ -8,7 +8,7 @@ TOKEN = "8948413828:AAGEiiFZQKptDfkNJzRUor4J5qJxCSgNx1g"
 bot = telebot.TeleBot(TOKEN)
 
 # --- QUẢN LÝ QUYỀN HẠN ---
-ADMIN_ID = 123456789          # Thay ID Admin tối cao của bạn vào đây
+ADMIN_ID = 8725740462          # Thay ID Admin tối cao của bạn vào đây
 QUAN_TRIVIEN = set()          
 NGUOI_THUE = set()            
 
@@ -21,7 +21,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 @bot.message_handler(commands=['menu'])
 def show_menu(message):
     menu_text = (
-        "🤖 **BẢNG ĐIỀU KHIỂN BOT** 🤖\n"
+        "🤖 **MENU BOT LE NHAN** 🤖\n"
         "----------------------------------------\n"
         "👑 **ADMIN / QTV** | 👤 **BÌNH THƯỜNG**\n"
         "----------------------------------------\n"
