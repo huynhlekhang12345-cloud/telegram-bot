@@ -4,7 +4,8 @@ import time
 import telebot
 
 # Cấu hình Token và Admin
-TOKEN = "8948413828:AAFKfmqJA_By7L63kgOF87-4iwwArnU3vpk"
+TOKEN = "8948413828:AAEq76h9wvJPvV46W7lau-ENFcoJHoc5BgI
+"
 bot = telebot.TeleBot(TOKEN)
 
 # Danh sách ID Telegram của Admin tối cao (Giữ nguyên quyền ở mọi box, chỉ mất khi gõ /qtv)
