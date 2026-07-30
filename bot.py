@@ -4,8 +4,7 @@ import telebot
 from flask import Flask
 
 # 1. Khởi tạo Bot Telegram
-TOKEN = "8948413828:AAEq76h9wvJPvV46W7lau-ENFcoJHoc5BgI
-"
+TOKEN = "8948413828:AAEq76h9wvJPvV46W7lau-ENFcoJHoc5BgI"
 bot = telebot.TeleBot(TOKEN)
 
 # Định nghĩa các lệnh cho bot của bạn ở đây
