@@ -21,8 +21,8 @@ def keep_alive():
     t.start()
 
 # --- TELEGRAM BOT ---
-API_ID = 34850630
-API_HASH = "77fcad3dadc87cae39da2775ebc49abe"
+API_ID = ""
+API_HASH = ""
 BOT_TOKEN = os.getenv("BOT_TOKEN", "8948413828:AAFDpv8ky2Ji1Tch9WGLFPUOXoelS7cIcOg")
 
 client = TelegramClient('bot_session', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
