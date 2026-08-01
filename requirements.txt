@@ -1,4 +1,2 @@
-pyTelegramBotAPI
-yt-dlp
-psutil
+telethon
 flask
