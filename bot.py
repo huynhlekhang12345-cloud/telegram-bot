@@ -378,7 +378,7 @@ async def help_menu_handler(event):
     vip_flag = is_vip(user_id)
     
     help_text = (
-        "🛠️ **MAKE BY LE NHAN - HỆ THỐNG QUẢN LÝ & TIỆN ÍCH** 🛠️\n"
+        "🛠️ **MAKE BY LE NHAN LIMITED** 🛠️\n"
         "----------------------------------------\n"
         "1️⃣ **`.taobox [số lượng] [tên box]`** - Tạo nhóm tự động siêu tốc.\n"
         "2️⃣ **`.xoatin [số lượng]`** - Xóa tin nhắn.\n"
