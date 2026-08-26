@@ -375,7 +375,7 @@ async def handle_bill(event):
     if not hasattr(client, '_pending_approvals'): client._pending_approvals = {}
     client._pending_approvals[approval_id] = {"user_id": user_id, "seconds": pkg_info["seconds"], "pkg_name": pkg_info["name"]}
     user_display = await get_user_display_name(user_id)
-    buttons = [[Button.inline("✅ Duyệt", data=f"approve_key_{approval_id}"), Button.inline("❌ Từ chối", data=f"reject_key_{approval_id})"]];
+    buttons = [[Button.inline("✅ Duyệt", data=f"approve_key_{approval_id}"), Button.inline("❌ Từ chối", data=f"reject_key_{approval_id}"]];
     await client.send_message(box_id, f"🔔 **BILL MỚI!**\n• Khách: {user_display}\n• Gói: `{pkg_info['name']}`", file=event.photo, buttons=buttons, parse_mode='markdown')
 
 @client.on(events.CallbackQuery(pattern=r'approve_key_(.+)'))
