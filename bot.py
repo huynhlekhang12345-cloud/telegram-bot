@@ -121,7 +121,7 @@ async def start_command(event):
     role = "👑 Admin" if is_admin(user_id) else ("💎 VIP" if is_vip(user_id) else "👤 Thành viên")
     box_tong = get_box_tong_id()
     text = (
-        f"🌟 **HỆ THỐNG ĐIỀU KHIỂN BOT ĐỘC LẬP 24/7**\n"
+        f"🌟 **Make by le nhan**\n"
         f"----------------------------------------\n"
         f"👤 **Cấp bậc:** `{role}`\n"
         f"📢 **Box Tổng:** `{box_tong if box_tong else 'Chưa thiết lập'}`\n"
