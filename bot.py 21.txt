@@ -10,7 +10,7 @@ from telethon import TelegramClient, events, Button
 from PIL import Image, ImageDraw, ImageFont
 
 # ==================== CẤU HÌNH HỆ THỐNG ====================
-API_ID = 2040
+API_ID = 34850630
 API_HASH = 'b18441a1ff607e10a989891a5462e627'
 ADMIN_ID = 8725740462
 BOT_TOKEN = os.getenv('BOT_TOKEN', '8948413828:AAFDpv8ky2Ji1Tch9WGLFPUOXoelS7cIcOg')
