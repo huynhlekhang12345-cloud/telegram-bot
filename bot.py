@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 API_ID = 34850630
 API_HASH = '77fcad3dadc87cae39da2775ebc49abe'
 ADMIN_ID = 8725740462
-BOT_TOKEN = os.getenv('BOT_TOKEN', '8948413828:AAHx7Qw80_EWONnUsr2Gypy861fJ1e34v_Y')
+BOT_TOKEN = os.getenv('BOT_TOKEN', '8948413828:AAGsjwOHUV-051meuKfgK9x_im92ewOmh1M')
 DEFAULT_SECRET_PASSWORD = "nhandz 0367120063"
 
 # ==================== WEB SERVER GIẢ LẬP WEB APP 24/7 ====================
