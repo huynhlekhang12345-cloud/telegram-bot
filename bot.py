@@ -12,10 +12,11 @@ API_ID = 34850630  # Thay api_id của bạn
 API_HASH = "77fcad3dadc87cae39da2775ebc49abe"
 BOT_TOKEN = "8948413828:AAGsjwOHUV-051meuKfgK9x_im92ewOmh1M"
 
-# 🛑 QUAN TRỌNG: Thay ID Telegram của bạn vào đây để bot chỉ nhận lệnh từ bạn (Chống hack/quét)
+# 🛑 QUAN TRỌNG: Thay ID Telegram của bạn vào đây để bot chỉ nhận lệnh từ bạn
 ADMIN_ID = 8725740462  
 
-client = TelegramClient('bot_session', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+# FIX: Chỉ khởi tạo instance, CHƯA gọi .start() ở đây
+client = TelegramClient('bot_session', API_ID, API_HASH)
 
 FILE_STORAGE_DIR = "bot_file_storage"
 os.makedirs(FILE_STORAGE_DIR, exist_ok=True)
@@ -110,7 +111,6 @@ async def start_web_server():
 async def start_command_handler(event):
     u_id = event.sender_id
     
-    # 🛡️ CHẶN TOÀN BỘ NGƯỜI LẠ (BẢO VỆ CHỐNG HACK/QUÉT)
     if not is_authorized(u_id):
         await event.reply("⛔ **Hệ thống riêng tư!** Bạn không có quyền truy cập bot này.")
         return
@@ -527,7 +527,15 @@ async def cancel_task_cb(event):
 
 async def main():
     print("Bot bảo mật riêng tư đang khởi động hệ thống...")
+    
+    # 1. Khởi chạy Web Server chống ngủ đông
     await start_web_server()
+    
+    # 2. FIX: Khởi động Telethon Client asynchronously khi Event Loop đã sẵn sàng
+    await client.start(bot_token=BOT_TOKEN)
+    print("Telegram client đã kết nối thành công!")
+    
+    # 3. Duy trì bot chạy ngầm
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
