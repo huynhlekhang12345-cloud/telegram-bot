@@ -10,7 +10,7 @@ from telethon import TelegramClient, events, Button
 # ==============================================================================
 API_ID = 34850630  
 API_HASH = "77fcad3dadc87cae39da2775ebc49abe"
-BOT_TOKEN = "8948413828:AAGsjwOHUV-051meuKfgK9x_im92ewOmh1M"
+BOT_TOKEN = "8378602981:AAGmhMCGWZMfeadUe5a_L3frRfViZLGx8BE"
 
 # 🛑 QUAN TRỌNG: ID Telegram Admin
 ADMIN_ID = 8725740462  
