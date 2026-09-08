@@ -9,7 +9,7 @@ from telethon import TelegramClient, events, Button
 # CẤU HÌNH BẢO MẬT & HỆ THỐNG RIÊNG TƯ (LIMITED BOT)
 # ==============================================================================
 API_ID = 34850630  # Thay api_id của bạn
-API_HASH = "your_api_hash"
+API_HASH = "348"
 BOT_TOKEN = "your_bot_token"
 
 # 🛑 QUAN TRỌNG: Thay ID Telegram của bạn vào đây để bot chỉ nhận lệnh từ bạn (Chống hack/quét)
