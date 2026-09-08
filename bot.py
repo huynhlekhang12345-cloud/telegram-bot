@@ -12,11 +12,11 @@ API_ID = 34850630  # Thay api_id của bạn
 API_HASH = "77fcad3dadc87cae39da2775ebc49abe"
 BOT_TOKEN = "8948413828:AAGsjwOHUV-051meuKfgK9x_im92ewOmh1M"
 
-# 🛑 QUAN TRỌNG: Thay ID Telegram của bạn vào đây để bot chỉ nhận lệnh từ bạn
+# 🛑 QUAN TRỌNG: Thay ID Telegram của bạn vào đây
 ADMIN_ID = 8725740462  
 
-# FIX: Chỉ khởi tạo instance, CHƯA gọi .start() ở đây
-client = TelegramClient('bot_session', API_ID, API_HASH)
+# FIX PYTHON 3.14: Đặt biến client ban đầu là None
+client = None
 
 FILE_STORAGE_DIR = "bot_file_storage"
 os.makedirs(FILE_STORAGE_DIR, exist_ok=True)
@@ -104,438 +104,408 @@ async def start_web_server():
 
 
 # ==============================================================================
-# 2. HỆ THỐNG GIAO DIỆN & ĐIỀU HƯỚNG /START (LIMITED CHO CHỦ NHÂN)
+# 2. HÀM ĐĂNG KÝ CÁC EVENT HANDLERS
 # ==============================================================================
 
-@client.on(events.NewMessage(pattern=r'/start'))
-async def start_command_handler(event):
-    u_id = event.sender_id
+def register_handlers(cli):
     
-    if not is_authorized(u_id):
-        await event.reply("⛔ **Hệ thống riêng tư!** Bạn không có quyền truy cập bot này.")
-        return
+    @cli.on(events.NewMessage(pattern=r'/start'))
+    async def start_command_handler(event):
+        u_id = event.sender_id
+        if not is_authorized(u_id):
+            await event.reply("⛔ **Hệ thống riêng tư!** Bạn không có quyền truy cập bot này.")
+            return
 
-    user = await event.get_sender()
-    username_str = f"@{user.username}" if user.username else user.first_name
-    
-    text = (
-        f"🌟 **Menu make By le nhan** 🌟\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"👋 Chào mừng {username_str} đến với menu của admin le nhan limited.\n"
-        f"🔥 *Hãy chọn menu cực xịn để sài:*"
-    )
-    
-    buttons = [
-        [Button.inline("🚀 Menu Thường", data=f"select_menu_normal_{u_id}")],
-        [Button.inline("⭐ Menu VIP", data=f"select_menu_vip_{u_id}")],
-        [Button.inline("👑 Menu Admin Tối Cao", data=f"select_menu_admin_{u_id}")],
-        [Button.inline("📖 Hướng Dẫn Sử Dụng", data=f"system_guide_{u_id}")],
-        [Button.url("📞 Liên hệ Admin", "https://t.me/BONAMKI")]
-    ]
-    await event.reply(text, buttons=buttons, parse_mode='markdown')
-
-
-@client.on(events.CallbackQuery())
-async def global_security_filter(event):
-    u_id = event.sender_id
-    if not is_authorized(u_id):
-        await event.answer("⛔ Cảnh báo: Truy cập trái phép bị từ chối!", alert=True)
-        return
-    if await check_flood(event):
-        await event.answer("⚠️ Thao tác quá nhanh, vui lòng từ từ!", alert=True)
-        raise events.StopPropagation
-
-
-@client.on(events.CallbackQuery(pattern=r'back_to_main_selector_(\d+)'))
-async def back_to_main_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    user = await event.get_sender()
-    username_str = f"@{user.username}" if user.username else user.first_name
-    
-    text = (
-        f"🌟 **Menu make By le nhan** 🌟\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"👋 Chào mừng {username_str} đến với menu của admin le nhan limited.\n"
-        f"🔥 *Hãy chọn menu cực xịn để sài:*"
-    )
-    buttons = [
-        [Button.inline("🚀 Menu Thường", data=f"select_menu_normal_{u_id}")],
-        [Button.inline("⭐ Menu VIP", data=f"select_menu_vip_{u_id}")],
-        [Button.inline("👑 Menu Admin Tối Cao", data=f"select_menu_admin_{u_id}")],
-        [Button.inline("📖 Hướng Dẫn Sử Dụng", data=f"system_guide_{u_id}")],
-        [Button.url("📞 Liên hệ Admin", "https://t.me/BONAMKI")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
-
-
-# ==============================================================================
-# 3. GIAO DIỆN HƯỚNG DẪN TƯƠNG TÁC (BUILT-IN GUIDE)
-# ==============================================================================
-
-@client.on(events.CallbackQuery(pattern=r'system_guide_(\d+)'))
-async def system_guide_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    text = (
-        f"📖 **HƯỚNG DẪN SỬ DỤNG HỆ THỐNG CHI TIẾT**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"1️⃣ **Khởi động:** Gõ lệnh `/start` để mở bảng điều khiển.\n"
-        f"2️⃣ **Treo Tiền:** Nạp file `.txt` (Xử lý **tất cả các dòng** cùng lúc).\n"
-        f"3️⃣ **Treo Tag:** Nạp file `.txt` (Xử lý **từng dòng** tuần tự có delay).\n"
-        f"4️⃣ **Canh Sàn:** Timeout chuẩn **1 phút 30 giây** báo động về Box Tổng & Admin.\n"
-        f"5️⃣ **Bảo mật:** Bot Limited độc quyền cho `@BONAMKI`."
-    )
-    buttons = [[Button.inline("🔙 Quay lại Menu Chính", data=f"back_to_main_selector_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
-
-
-# ==============================================================================
-# 4. MENU THƯỜNG & MENU VIP
-# ==============================================================================
-
-@client.on(events.CallbackQuery(pattern=r'select_menu_normal_(\d+)'))
-async def select_menu_normal_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    text = (
-        f"🚀 **MENU THƯỜNG - TÁC VỤ HỆ THỐNG**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📎 *Chọn tính năng bạn muốn thao tác:*"
-    )
-    buttons = [
-        [Button.inline("💸 Treo Tiền", data=f"treotien_{u_id}"), Button.inline("🏷️ Treo Tag", data=f"treotag_{u_id}")],
-        [Button.inline("🎯 Canh Sàn", data=f"canhsan_select_box_{u_id}"), Button.inline("📊 Status", data=f"status_{u_id}")],
-        [Button.inline("🔙 Quay lại", data=f"back_to_main_selector_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
-
-
-@client.on(events.CallbackQuery(pattern=r'select_menu_vip_(\d+)'))
-async def select_menu_vip_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    text = (
-        f"⭐ **MENU VIP - TÁC VỤ ĐẶC QUYỀN**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📎 *Khu vực đặc quyền VIP tối ưu tốc độ:*"
-    )
-    buttons = [
-        [Button.inline("💸 Treo Tiền (VIP)", data=f"treotien_{u_id}"), Button.inline("🏷️ Treo Tag (VIP)", data=f"treotag_{u_id}")],
-        [Button.inline("🎯 Canh Sàn (VIP)", data=f"canhsan_select_box_{u_id}"), Button.inline("📊 Status (VIP)", data=f"status_{u_id}")],
-        [Button.inline("🔙 Quay lại", data=f"back_to_main_selector_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
-
-
-# ==============================================================================
-# 5. MENU ADMIN TỐI CAO
-# ==============================================================================
-
-@client.on(events.CallbackQuery(pattern=r'select_menu_admin_(\d+)'))
-async def select_menu_admin_cb(event):
-    global system_maintenance_mode
-    u_id = int(event.pattern_match.group(1))
-    m_status = "🔴 ĐANG BẬT" if system_maintenance_mode else "🟢 ĐANG TẮT"
-    text = (
-        f"👑 **Menu Admin le nhan**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🛡️ *bảo vệ độc quyền.*\n"
-        f"🛠️ *Bảo trì:* `{m_status}`"
-    )
-    buttons = [
-        [Button.inline("💸 Treo Tiền", data=f"treotien_{u_id}"), Button.inline("🏷️ Treo Tag", data=f"treotag_{u_id}")],
-        [Button.inline("🎯 Canh Sàn", data=f"canhsan_select_box_{u_id}"), Button.inline("📊 Status Toàn Bộ", data=f"status_all_bots_{u_id}")],
-        [Button.inline("📋 Kho File", data=f"admin_manage_files_{u_id}"), Button.inline("🤖 Quản Lý Bot Phụ", data=f"admin_manage_all_bots_{u_id}")],
-        [Button.inline("📢 Broadcast", data=f"admin_broadcast_{u_id}"), Button.inline("📜 Xem Logs", data=f"admin_view_logs_{u_id}")],
-        [Button.inline("🛠️ Bật/Tắt Bảo Trì", data=f"admin_toggle_maintenance_{u_id}"), Button.inline("🔄 Khởi Động Lại", data=f"admin_restart_bot_{u_id}")],
-        [Button.inline("🛑 Dừng Khẩn Cấp (Kill All)", data=f"admin_kill_all_{u_id}")],
-        [Button.inline("🔙 Quay lại", data=f"back_to_main_selector_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
-
-
-# ==============================================================================
-# 6. XỬ LÝ SỰ KIỆN TÍNH NĂNG TREO TIỀN, TREO TAG & CANH SÀN
-# ==============================================================================
-
-@client.on(events.CallbackQuery(pattern=r'(treotien|treotag)_(\d+)'))
-async def feature_selection_cb(event):
-    parts = event.pattern_match.group(0).split('_')
-    feature_type = parts[0]
-    u_id = int(parts[1])
-    
-    if feature_type == "treotien":
-        title = "💸 TREO TIỀN (Xử lý TẤT CẢ CÁC DÒNG cùng lúc)"
-    else:
-        title = "🏷️ TREO TAG (Xử lý TỪNG DÒNG tuần tự)"
-
-    text = (
-        f"📌 **{title}**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📎 *Vui lòng gửi file `.txt` cấu hình tương ứng vào khung chat bên dưới:*"
-    )
-    buttons = [[Button.inline("❌ Huỷ", data=f"cancel_task_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
-
-
-@client.on(events.CallbackQuery(pattern=r'canhsan_select_box_(\d+)'))
-async def canhsan_select_box_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    text = (
-        f"🎯 **CANH SÀN — BƯỚC 1: CHỌN BOX / NHÓM**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"💡 *Vui lòng chọn box chat mục tiêu cần đưa vào hệ thống giám sát:*"
-    )
-    buttons = [
-        [Button.inline("📁 [Box 1] Nhóm Sàn Đầu Tư A", data=f"canhsan_box_chosen_{u_id}_box1")],
-        [Button.inline("📁 [Box 2] Nhóm Tín Hiệu VIP B", data=f"canhsan_box_chosen_{u_id}_box2")],
-        [Button.inline("❌ Huỷ", data=f"cancel_task_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
-
-
-@client.on(events.CallbackQuery(pattern=r'canhsan_box_chosen_(\d+)_(.+)'))
-async def canhsan_box_chosen_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    box_code = event.pattern_match.group(2)
-    text = (
-        f"🎯 **CANH SÀN — BƯỚC 2: CHỌN NGƯỜI CẦN THEO DÕI**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📍 *Box đã chọn:* `{box_code}`\n"
-        f"💡 *Chọn tài khoản hoặc người dùng mục tiêu cần canh hoạt động:*"
-    )
-    buttons = [
-        [Button.inline("👤 [User 1] @TraderPro_99", data=f"canhsan_start_run_{u_id}_{box_code}_user1")],
-        [Button.inline("👤 [User 2] @BossKiemTien", data=f"canhsan_start_run_{u_id}_{box_code}_user2")],
-        [Button.inline("🔙 Chọn lại Box", data=f"canhsan_select_box_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
-
-
-@client.on(events.CallbackQuery(pattern=r'canhsan_start_run_(\d+)_(.+)_(.+)'))
-async def canhsan_start_run_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    box_code = event.pattern_match.group(2)
-    target_user = event.pattern_match.group(3)
-    text = (
-        f"🚀 **HỆ THỐNG CANH SÀN ĐÃ KHỞI CHẠY THÀNH CÔNG!**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📍 <b>Box giám sát:</b> `{box_code}`\n"
-        f"🎯 <b>Mục tiêu canh:</b> `{target_user}`\n"
-        f"⏱️ <b>Ngưỡng timeout:</b> `1 phút 30 giây`\n\n"
-        f"🟢 *Bot đang chạy ngầm 24/7 trên Render.*"
-    )
-    buttons = [[Button.inline("🔙 Quay lại Menu Chính", data=f"back_to_main_selector_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='html')
-
-
-@client.on(events.NewMessage(incoming=True))
-async def handle_incoming_file(event):
-    if not is_authorized(event.sender_id):
-        return
-    if not event.document:
-        return
-    file_name = event.document.attributes[0].file_name if hasattr(event.document.attributes[0], 'file_name') else "config.txt"
-    if not file_name.endswith('.txt'):
-        return
-
-    status_msg = await event.reply("⏳ **Đang xử lý và phân tích file cấu hình `.txt`...**")
-    try:
-        file_path = os.path.join(FILE_STORAGE_DIR, file_name)
-        await event.client.download_media(event.message, file_path)
+        user = await event.get_sender()
+        username_str = f"@{user.username}" if user.username else user.first_name
         
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-            lines = [line.strip() for line in f.readlines() if line.strip()]
-            
-        set_config_db(f"file_{file_name}", file_path)
-        
-        await status_msg.edit(
-            f"✅ **Nạp và lưu file thành công!**\n"
-            f"📁 Tên file: `{file_name}`\n"
-            f"📊 Tổng số dòng nhận diện: `{len(lines)} dòng`\n"
-            f"👉 Đã bảo mật và sẵn sàng chạy ngầm."
+        text = (
+            f"🌟 **Menu make By le nhan** 🌟\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"👋 Chào mừng {username_str} đến với menu của admin le nhan limited.\n"
+            f"🔥 *Hãy chọn menu cực xịn để sài:*"
         )
-    except Exception as e:
-        await status_msg.edit(f"❌ **Lỗi khi xử lý file:** `{e}`")
+        
+        buttons = [
+            [Button.inline("🚀 Menu Thường", data=f"select_menu_normal_{u_id}")],
+            [Button.inline("⭐ Menu VIP", data=f"select_menu_vip_{u_id}")],
+            [Button.inline("👑 Menu Admin Tối Cao", data=f"select_menu_admin_{u_id}")],
+            [Button.inline("📖 Hướng Dẫn Sử Dụng", data=f"system_guide_{u_id}")],
+            [Button.url("📞 Liên hệ Admin", "https://t.me/BONAMKI")]
+        ]
+        await event.reply(text, buttons=buttons, parse_mode='markdown')
 
+    @cli.on(events.CallbackQuery())
+    async def global_security_filter(event):
+        u_id = event.sender_id
+        if not is_authorized(u_id):
+            await event.answer("⛔ Cảnh báo: Truy cập trái phép bị từ chối!", alert=True)
+            return
+        if await check_flood(event):
+            await event.answer("⚠️ Thao tác quá nhanh, vui lòng từ từ!", alert=True)
+            raise events.StopPropagation
 
-@client.on(events.CallbackQuery(pattern=r'status_(\d+)'))
-async def status_feature_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    text = (
-        f"📊 **TRẠNG THÁI HỆ THỐNG**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🟢 Render Web Service: `Hoạt động 24/7`\n"
-        f"🎯 Canh Sàn (Timeout 1p30s): `Trực tuyến`\n"
-        f"🛡️ Anti-Scan / Limited: `Bật`"
-    )
-    buttons = [[Button.inline("🔙 Quay lại", data=f"select_menu_normal_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
+    @cli.on(events.CallbackQuery(pattern=r'back_to_main_selector_(\d+)'))
+    async def back_to_main_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        user = await event.get_sender()
+        username_str = f"@{user.username}" if user.username else user.first_name
+        
+        text = (
+            f"🌟 **Menu make By le nhan** 🌟\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"👋 Chào mừng {username_str} đến với menu của admin le nhan limited.\n"
+            f"🔥 *Hãy chọn menu cực xịn để sài:*"
+        )
+        buttons = [
+            [Button.inline("🚀 Menu Thường", data=f"select_menu_normal_{u_id}")],
+            [Button.inline("⭐ Menu VIP", data=f"select_menu_vip_{u_id}")],
+            [Button.inline("👑 Menu Admin Tối Cao", data=f"select_menu_admin_{u_id}")],
+            [Button.inline("📖 Hướng Dẫn Sử Dụng", data=f"system_guide_{u_id}")],
+            [Button.url("📞 Liên hệ Admin", "https://t.me/BONAMKI")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
+    @cli.on(events.CallbackQuery(pattern=r'system_guide_(\d+)'))
+    async def system_guide_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        text = (
+            f"📖 **HƯỚNG DẪN SỬ DỤNG HỆ THỐNG CHI TIẾT**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"1️⃣ **Khởi động:** Gõ lệnh `/start` để mở bảng điều khiển.\n"
+            f"2️⃣ **Treo Tiền:** Nạp file `.txt` (Xử lý **tất cả các dòng** cùng lúc).\n"
+            f"3️⃣ **Treo Tag:** Nạp file `.txt` (Xử lý **từng dòng** tuần tự có delay).\n"
+            f"4️⃣ **Canh Sàn:** Timeout chuẩn **1 phút 30 giây** báo động về Box Tổng & Admin.\n"
+            f"5️⃣ **Bảo mật:** Bot Limited độc quyền cho `@BONAMKI`."
+        )
+        buttons = [[Button.inline("🔙 Quay lại Menu Chính", data=f"back_to_main_selector_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
-@client.on(events.CallbackQuery(pattern=r'status_all_bots_(\d+)'))
-async def status_all_bots_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    text = (
-        f"📊 **BÁO CÁO STATUS TOÀN BỘ HỆ THỐNG**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🟢 Tiến trình ngầm: `Ổn định`\n"
-        f"🎯 Canh Sàn: `Đang quét live/die`\n"
-        f"🛡️ Trạng thái bảo mật: `An toàn tuyệt đối`"
-    )
-    buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
+    @cli.on(events.CallbackQuery(pattern=r'select_menu_normal_(\d+)'))
+    async def select_menu_normal_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        text = (
+            f"🚀 **MENU THƯỜNG - TÁC VỤ HỆ THỐNG**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📎 *Chọn tính năng bạn muốn thao tác:*"
+        )
+        buttons = [
+            [Button.inline("💸 Treo Tiền", data=f"treotien_{u_id}"), Button.inline("🏷️ Treo Tag", data=f"treotag_{u_id}")],
+            [Button.inline("🎯 Canh Sàn", data=f"canhsan_select_box_{u_id}"), Button.inline("📊 Status", data=f"status_{u_id}")],
+            [Button.inline("🔙 Quay lại", data=f"back_to_main_selector_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
+    @cli.on(events.CallbackQuery(pattern=r'select_menu_vip_(\d+)'))
+    async def select_menu_vip_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        text = (
+            f"⭐ **MENU VIP - TÁC VỤ ĐẶC QUYỀN**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📎 *Khu vực đặc quyền VIP tối ưu tốc độ:*"
+        )
+        buttons = [
+            [Button.inline("💸 Treo Tiền (VIP)", data=f"treotien_{u_id}"), Button.inline("🏷️ Treo Tag (VIP)", data=f"treotag_{u_id}")],
+            [Button.inline("🎯 Canh Sàn (VIP)", data=f"canhsan_select_box_{u_id}"), Button.inline("📊 Status (VIP)", data=f"status_{u_id}")],
+            [Button.inline("🔙 Quay lại", data=f"back_to_main_selector_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
-@client.on(events.CallbackQuery(pattern=r'admin_manage_files_(\d+)'))
-async def admin_manage_files_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    files = os.listdir(FILE_STORAGE_DIR) if os.path.exists(FILE_STORAGE_DIR) else []
-    file_list = "\n".join([f"📁 `{f}`" for f in files]) if files else "*(Kho file trống)*"
-    
-    text = (
-        f"📋 **QUẢN LÝ KHO FILE HỆ THỐNG**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"Danh sách file hiện có:\n{file_list}"
-    )
-    buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
+    @cli.on(events.CallbackQuery(pattern=r'select_menu_admin_(\d+)'))
+    async def select_menu_admin_cb(event):
+        global system_maintenance_mode
+        u_id = int(event.pattern_match.group(1))
+        m_status = "🔴 ĐANG BẬT" if system_maintenance_mode else "🟢 ĐANG TẮT"
+        text = (
+            f"👑 **Menu Admin le nhan**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🛡️ *bảo vệ độc quyền.*\n"
+            f"🛠️ *Bảo trì:* `{m_status}`"
+        )
+        buttons = [
+            [Button.inline("💸 Treo Tiền", data=f"treotien_{u_id}"), Button.inline("🏷️ Treo Tag", data=f"treotag_{u_id}")],
+            [Button.inline("🎯 Canh Sàn", data=f"canhsan_select_box_{u_id}"), Button.inline("📊 Status Toàn Bộ", data=f"status_all_bots_{u_id}")],
+            [Button.inline("📋 Kho File", data=f"admin_manage_files_{u_id}"), Button.inline("🤖 Quản Lý Bot Phụ", data=f"admin_manage_all_bots_{u_id}")],
+            [Button.inline("📢 Broadcast", data=f"admin_broadcast_{u_id}"), Button.inline("📜 Xem Logs", data=f"admin_view_logs_{u_id}")],
+            [Button.inline("🛠️ Bật/Tắt Bảo Trì", data=f"admin_toggle_maintenance_{u_id}"), Button.inline("🔄 Khởi Động Lại", data=f"admin_restart_bot_{u_id}")],
+            [Button.inline("🛑 Dừng Khẩn Cấp (Kill All)", data=f"admin_kill_all_{u_id}")],
+            [Button.inline("🔙 Quay lại", data=f"back_to_main_selector_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
+    @cli.on(events.CallbackQuery(pattern=r'(treotien|treotag)_(\d+)'))
+    async def feature_selection_cb(event):
+        parts = event.pattern_match.group(0).split('_')
+        feature_type = parts[0]
+        u_id = int(parts[1])
+        
+        if feature_type == "treotien":
+            title = "💸 TREO TIỀN (Xử lý TẤT CẢ CÁC DÒNG cùng lúc)"
+        else:
+            title = "🏷️ TREO TAG (Xử lý TỪNG DÒNG tuần tự)"
 
-@client.on(events.CallbackQuery(pattern=r'admin_manage_all_bots_(\d+)'))
-async def admin_manage_all_bots_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT phone_number, status FROM userbot_sessions')
-    bots = cursor.fetchall()
-    conn.close()
-    
-    bot_list = "\n".join([f"🤖 `{b[0]}` — `{b[1]}`" for b in bots]) if bots else "*(Chưa có Session String nào)*"
-    text = (
-        f"🤖 **QUẢN LÝ USERBOT PHỤ**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"Danh sách tài khoản:\n{bot_list}\n\n"
-        f"👉 *Thêm mới bằng lệnh:* `/addsession <sđt> <string>`"
-    )
-    buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
+        text = (
+            f"📌 **{title}**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📎 *Vui lòng gửi file `.txt` cấu hình tương ứng vào khung chat bên dưới:*"
+        )
+        buttons = [[Button.inline("❌ Huỷ", data=f"cancel_task_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
+    @cli.on(events.CallbackQuery(pattern=r'canhsan_select_box_(\d+)'))
+    async def canhsan_select_box_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        text = (
+            f"🎯 **CANH SÀN — BƯỚC 1: CHỌN BOX / NHÓM**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"💡 *Vui lòng chọn box chat mục tiêu cần đưa vào hệ thống giám sát:*"
+        )
+        buttons = [
+            [Button.inline("📁 [Box 1] Nhóm Sàn Đầu Tư A", data=f"canhsan_box_chosen_{u_id}_box1")],
+            [Button.inline("📁 [Box 2] Nhóm Tín Hiệu VIP B", data=f"canhsan_box_chosen_{u_id}_box2")],
+            [Button.inline("❌ Huỷ", data=f"cancel_task_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
-@client.on(events.NewMessage(pattern=r'/addsession\s+(\+?\d+)\s+(.+)'))
-async def add_session_handler(event):
-    if not is_authorized(event.sender_id):
-        return
-    args = event.pattern_match.groups()
-    phone = args[0]
-    session_str = args[1].strip()
-    try:
+    @cli.on(events.CallbackQuery(pattern=r'canhsan_box_chosen_(\d+)_(.+)'))
+    async def canhsan_box_chosen_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        box_code = event.pattern_match.group(2)
+        text = (
+            f"🎯 **CANH SÀN — BƯỚC 2: CHỌN NGƯỜI CẦN THEO DÕI**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📍 *Box đã chọn:* `{box_code}`\n"
+            f"💡 *Chọn tài khoản hoặc người dùng mục tiêu cần canh hoạt động:*"
+        )
+        buttons = [
+            [Button.inline("👤 [User 1] @TraderPro_99", data=f"canhsan_start_run_{u_id}_{box_code}_user1")],
+            [Button.inline("👤 [User 2] @BossKiemTien", data=f"canhsan_start_run_{u_id}_{box_code}_user2")],
+            [Button.inline("🔙 Chọn lại Box", data=f"canhsan_select_box_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
+
+    @cli.on(events.CallbackQuery(pattern=r'canhsan_start_run_(\d+)_(.+)_(.+)'))
+    async def canhsan_start_run_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        box_code = event.pattern_match.group(2)
+        target_user = event.pattern_match.group(3)
+        text = (
+            f"🚀 **HỆ THỐNG CANH SÀN ĐÃ KHỞI CHẠY THÀNH CÔNG!**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📍 <b>Box giám sát:</b> `{box_code}`\n"
+            f"🎯 <b>Mục tiêu canh:</b> `{target_user}`\n"
+            f"⏱️ <b>Ngưỡng timeout:</b> `1 phút 30 giây`\n\n"
+            f"🟢 *Bot đang chạy ngầm 24/7 trên Render.*"
+        )
+        buttons = [[Button.inline("🔙 Quay lại Menu Chính", data=f"back_to_main_selector_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='html')
+
+    @cli.on(events.NewMessage(incoming=True))
+    async def handle_incoming_file(event):
+        if not is_authorized(event.sender_id):
+            return
+        if not event.document:
+            return
+        file_name = event.document.attributes[0].file_name if hasattr(event.document.attributes[0], 'file_name') else "config.txt"
+        if not file_name.endswith('.txt'):
+            return
+
+        status_msg = await event.reply("⏳ **Đang xử lý và phân tích file cấu hình `.txt`...**")
+        try:
+            file_path = os.path.join(FILE_STORAGE_DIR, file_name)
+            await event.client.download_media(event.message, file_path)
+            
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = [line.strip() for line in f.readlines() if line.strip()]
+                
+            set_config_db(f"file_{file_name}", file_path)
+            
+            await status_msg.edit(
+                f"✅ **Nạp và lưu file thành công!**\n"
+                f"📁 Tên file: `{file_name}`\n"
+                f"📊 Tổng số dòng nhận diện: `{len(lines)} dòng`\n"
+                f"👉 Đã bảo mật và sẵn sàng chạy ngầm."
+            )
+        except Exception as e:
+            await status_msg.edit(f"❌ **Lỗi khi xử lý file:** `{e}`")
+
+    @cli.on(events.CallbackQuery(pattern=r'status_(\d+)'))
+    async def status_feature_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        text = (
+            f"📊 **TRẠNG THÁI HỆ THỐNG**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🟢 Render Web Service: `Hoạt động 24/7`\n"
+            f"🎯 Canh Sàn (Timeout 1p30s): `Trực tuyến`\n"
+            f"🛡️ Anti-Scan / Limited: `Bật`"
+        )
+        buttons = [[Button.inline("🔙 Quay lại", data=f"select_menu_normal_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
+
+    @cli.on(events.CallbackQuery(pattern=r'status_all_bots_(\d+)'))
+    async def status_all_bots_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        text = (
+            f"📊 **BÁO CÁO STATUS TOÀN BỘ HỆ THỐNG**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🟢 Tiến trình ngầm: `Ổn định`\n"
+            f"🎯 Canh Sàn: `Đang quét live/die`\n"
+            f"🛡️ Trạng thái bảo mật: `An toàn tuyệt đối`"
+        )
+        buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
+
+    @cli.on(events.CallbackQuery(pattern=r'admin_manage_files_(\d+)'))
+    async def admin_manage_files_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        files = os.listdir(FILE_STORAGE_DIR) if os.path.exists(FILE_STORAGE_DIR) else []
+        file_list = "\n".join([f"📁 `{f}`" for f in files]) if files else "*(Kho file trống)*"
+        
+        text = (
+            f"📋 **QUẢN LÝ KHO FILE HỆ THỐNG**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Danh sách file hiện có:\n{file_list}"
+        )
+        buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
+
+    @cli.on(events.CallbackQuery(pattern=r'admin_manage_all_bots_(\d+)'))
+    async def admin_manage_all_bots_cb(event):
+        u_id = int(event.pattern_match.group(1))
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute(
-            'INSERT OR REPLACE INTO userbot_sessions (phone_number, session_string, status) VALUES (?, ?, ?)',
-            (phone, session_str, 'Active')
-        )
-        conn.commit()
+        cursor.execute('SELECT phone_number, status FROM userbot_sessions')
+        bots = cursor.fetchall()
         conn.close()
-        await event.reply(f"✅ **Đã thêm Session thành công cho:** `{phone}`")
-    except Exception as e:
-        await event.reply(f"❌ **Lỗi:** `{e}`")
+        
+        bot_list = "\n".join([f"🤖 `{b[0]}` — `{b[1]}`" for b in bots]) if bots else "*(Chưa có Session String nào)*"
+        text = (
+            f"🤖 **QUẢN LÝ USERBOT PHỤ**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Danh sách tài khoản:\n{bot_list}\n\n"
+            f"👉 *Thêm mới bằng lệnh:* `/addsession <sđt> <string>`"
+        )
+        buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
+    @cli.on(events.NewMessage(pattern=r'/addsession\s+(\+?\d+)\s+(.+)'))
+    async def add_session_handler(event):
+        if not is_authorized(event.sender_id):
+            return
+        args = event.pattern_match.groups()
+        phone = args[0]
+        session_str = args[1].strip()
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute(
+                'INSERT OR REPLACE INTO userbot_sessions (phone_number, session_string, status) VALUES (?, ?, ?)',
+                (phone, session_str, 'Active')
+            )
+            conn.commit()
+            conn.close()
+            await event.reply(f"✅ **Đã thêm Session thành công cho:** `{phone}`")
+        except Exception as e:
+            await event.reply(f"❌ **Lỗi:** `{e}`")
 
-@client.on(events.CallbackQuery(pattern=r'admin_broadcast_(\d+)'))
-async def admin_broadcast_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    text = (
-        f"📢 **PHÁT THÔNG BÁO (BROADCAST)**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"Gửi nội dung tin nhắn bạn muốn broadcast đến toàn hệ thống."
-    )
-    buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
+    @cli.on(events.CallbackQuery(pattern=r'admin_broadcast_(\d+)'))
+    async def admin_broadcast_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        text = (
+            f"📢 **PHÁT THÔNG BÁO (BROADCAST)**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Gửi nội dung tin nhắn bạn muốn broadcast đến toàn hệ thống."
+        )
+        buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
+    @cli.on(events.CallbackQuery(pattern=r'admin_view_logs_(\d+)'))
+    async def admin_view_logs_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('SELECT account_id, box_id, timestamp FROM canh_san_history ORDER BY id DESC LIMIT 5')
+        rows = cursor.fetchall()
+        conn.close()
+        
+        history = "\n".join([f"⚠️ Acc `{r[0]}` rớt tại box `{r[1]}` lúc `{r[2]}`" for r in rows]) if rows else "*(Chưa ghi nhận sự cố rớt)*"
+        text = (
+            f"📜 **NHẬT KÝ LỖI & CANH SÀN**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"<code>[INFO] Render Keep-Alive: Active</code>\n"
+            f"<code>[INFO] Security: Protected (@BONAMKI)</code>\n\n"
+            f"<b>Lịch sử rớt gần nhất:</b>\n{history}"
+        )
+        buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
+        ]
+        await event.edit(text, buttons=buttons, parse_mode='markdown')
 
-@client.on(events.CallbackQuery(pattern=r'admin_view_logs_(\d+)'))
-async def admin_view_logs_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT account_id, box_id, timestamp FROM canh_san_history ORDER BY id DESC LIMIT 5')
-    rows = cursor.fetchall()
-    conn.close()
-    
-    history = "\n".join([f"⚠️ Acc `{r[0]}` rớt tại box `{r[1]}` lúc `{r[2]}`" for r in rows]) if rows else "*(Chưa ghi nhận sự cố rớt)*"
-    text = (
-        f"📜 **NHẬT KÝ LỖI & CANH SÀN**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"<code>[INFO] Render Keep-Alive: Active</code>\n"
-        f"<code>[INFO] Security: Protected (@BONAMKI)</code>\n\n"
-        f"<b>Lịch sử rớt gần nhất:</b>\n{history}"
-    )
-    buttons = [[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
-    ]
-    await event.edit(text, buttons=buttons, parse_mode='markdown')
+    @cli.on(events.CallbackQuery(pattern=r'admin_toggle_maintenance_(\d+)'))
+    async def admin_toggle_maintenance_cb(event):
+        global system_maintenance_mode
+        u_id = int(event.pattern_match.group(1))
+        system_maintenance_mode = not system_maintenance_mode
+        status_str = "BẬT" if system_maintenance_mode else "TẮT"
+        await event.answer(f"Đã chuyển chế độ bảo trì thành: {status_str}", alert=True)
+        await select_menu_admin_cb(event)
 
+    @cli.on(events.CallbackQuery(pattern=r'admin_restart_bot_(\d+)'))
+    async def admin_restart_bot_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        await event.answer("🔄 Đang khởi động lại...", alert=True)
+        await event.edit(
+            f"🔄 **ĐÃ KHỞI ĐỘNG LẠI TIẾN TRÌNH BOT!**",
+            buttons=[[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
+        ]
+        )
 
-@client.on(events.CallbackQuery(pattern=r'admin_toggle_maintenance_(\d+)'))
-async def admin_toggle_maintenance_cb(event):
-    global system_maintenance_mode
-    u_id = int(event.pattern_match.group(1))
-    system_maintenance_mode = not system_maintenance_mode
-    status_str = "BẬT" if system_maintenance_mode else "TẮT"
-    await event.answer(f"Đã chuyển chế độ bảo trì thành: {status_str}", alert=True)
-    await select_menu_admin_cb(event)
+    @cli.on(events.CallbackQuery(pattern=r'admin_kill_all_(\d+)'))
+    async def admin_kill_all_cb(event):
+        u_id = int(event.pattern_match.group(1))
+        task_active_status.clear()
+        last_active_tracker.clear()
+        await event.answer("⚠️ Đã dừng khẩn cấp toàn bộ!", alert=True)
+        await event.edit(
+            f"🛑 **DỪNG KHẨN CẤP TỪ CHA LE NHAN LIMITED!**",
+            buttons=[[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
+        ]
+        )
 
-
-@client.on(events.CallbackQuery(pattern=r'admin_restart_bot_(\d+)'))
-async def admin_restart_bot_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    await event.answer("🔄 Đang khởi động lại...", alert=True)
-    await event.edit(
-        f"🔄 **ĐÃ KHỞI ĐỘNG LẠI TIẾN TRÌNH BOT!**",
-        buttons=[[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
-    ]
-    )
-
-
-@client.on(events.CallbackQuery(pattern=r'admin_kill_all_(\d+)'))
-async def admin_kill_all_cb(event):
-    u_id = int(event.pattern_match.group(1))
-    task_active_status.clear()
-    last_active_tracker.clear()
-    await event.answer("⚠️ Đã dừng khẩn cấp toàn bộ!", alert=True)
-    await event.edit(
-        f"🛑 **DỪNG KHẨN CẤP TỪ CHA LE NHAN LIMITED!**",
-        buttons=[[Button.inline("🔙 Quay lại Menu Admin", data=f"select_menu_admin_{u_id}")]
-    ]
-    )
-
-
-@client.on(events.CallbackQuery(pattern=r'cancel_task_(\d+)'))
-async def cancel_task_cb(event):
-    await event.edit("✅ **Đã huỷ thao tác thành công.**", buttons=None, parse_mode='markdown')
+    @cli.on(events.CallbackQuery(pattern=r'cancel_task_(\d+)'))
+    async def cancel_task_cb(event):
+        await event.edit("✅ **Đã huỷ thao tác thành công.**", buttons=None, parse_mode='markdown')
 
 
 # ==============================================================================
-# 7. KHỞI CHẠY CHÍNH (MAIN)
+# 3. KHỞI CHẠY CHÍNH (MAIN)
 # ==============================================================================
 
 async def main():
+    global client
     print("Bot bảo mật riêng tư đang khởi động hệ thống...")
     
-    # 1. Khởi chạy Web Server chống ngủ đông
+    # 1. Khởi chạy Keep-Alive Web Server
     await start_web_server()
     
-    # 2. FIX: Khởi động Telethon Client asynchronously khi Event Loop đã sẵn sàng
+    # 2. FIX PYTHON 3.14: Khởi tạo TelegramClient BÊN TRONG event loop đã active
+    client = TelegramClient('bot_session', API_ID, API_HASH)
+    
+    # 3. Đăng ký các sự kiện Telegram
+    register_handlers(client)
+    
+    # 4. Khởi động kết nối bot
     await client.start(bot_token=BOT_TOKEN)
     print("Telegram client đã kết nối thành công!")
     
-    # 3. Duy trì bot chạy ngầm
+    # 5. Duy trì chạy ngầm
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
